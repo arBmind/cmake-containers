@@ -23,8 +23,8 @@ For your CI you should write a simple bash script that runs the build, as cmake 
 docker run -it \
     --mount src="$(pwd)",target=/project,type=bind
     -w /project \
-    --entrypoint /bin/bash \
     arbmind/cmake-clang-libstdcpp:latest \
+    script/cmake_build.sh
 ```
 
 This mounts your current directory to `/project` and a build volume in the container. Changes the workdir to `/project`.
@@ -37,6 +37,9 @@ cd build
 cmake ..
 cmake --build
 ```
+
+If you want to see how this works, take a look at these repositories:
+* https://github.com/basicpp17/co-cpp19
 
 
 ## Details

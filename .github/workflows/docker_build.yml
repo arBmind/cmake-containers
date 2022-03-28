@@ -98,7 +98,7 @@ jobs:
           target: cmake-clang-libstdcpp-qt
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            arbmind/cmake-clang-libstdcpp-qt:cmake_${{ matrix.cmake_version }}-${{ matrix.clang_major }}-${{ matrix.gcc_major }}-${{ matrix.qt_version }}
+            arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang_major }}-${{ matrix.gcc_major }}-${{ matrix.qt_version }}
             ${{ matrix.clang_libstdcpp_qt_tags }}
           build-args: |
             CLANG_MAJOR=${{ matrix.clang_major }}

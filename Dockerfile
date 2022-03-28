@@ -108,9 +108,6 @@ COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
   PATH=/opt/cmake/bin:${PATH}
 
-WORKDIR /project
-ENTRYPOINT ["/opt/cmake/bin/cmake"]
-
 
 # final cmake-gcc-gt (with Qt)
 FROM gcc_base AS cmake-gcc-qt
@@ -128,9 +125,6 @@ ENV \
   QTDIR=/qt/${QT_VERSION}/${QT_ARCH} \
   PATH=/qt/${QT_VERSION}/${QT_ARCH}/bin:/opt/cmake/bin:${PATH} \
   LD_LIBRARY_PATH=/qt/${QT_VERSION}/${QT_ARCH}/lib:${LD_LIBRARY_PATH}
-
-WORKDIR /project
-ENTRYPOINT ["/opt/cmake/bin/cmake"]
 
 
 # base compiler setup for Clang
@@ -192,9 +186,6 @@ COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
   PATH=/opt/cmake/bin:${PATH}
 
-WORKDIR /project
-ENTRYPOINT ["/opt/cmake/bin/cmake"]
-
 
 FROM clang_base AS clang_libstdcpp_base
 ARG DISTRO
@@ -226,9 +217,6 @@ COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
   PATH=/opt/cmake/bin:${PATH}
 
-WORKDIR /project
-ENTRYPOINT ["/opt/cmake/bin/cmake"]
-
 
 # final cmake-clang-qt (with Qt)
 FROM clang_libstdcpp_base AS cmake-clang-libstdcpp-qt
@@ -247,6 +235,3 @@ ENV \
   QTDIR=/qt/${QT_VERSION}/${QT_ARCH} \
   PATH=/qt/${QT_VERSION}/${QT_ARCH}/bin:/opt/cmake/bin:${PATH} \
   LD_LIBRARY_PATH=/qt/${QT_VERSION}/${QT_ARCH}/lib:${LD_LIBRARY_PATH}
-
-WORKDIR /build
-ENTRYPOINT ["/opt/cmake/bin/cmake"]
