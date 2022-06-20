@@ -6,7 +6,7 @@ ARG QT_VERSION=6.2.4
 ARG QT_MODULES=""
 ARG CMAKE_VERSION=3.22.3
 ARG CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
-ARG RUNTIME_APT="libicu66 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
+ARG RUNTIME_APT="libicu70 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
 
 # base Qt setup
 FROM python:3.10-slim as qt_base
@@ -40,7 +40,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN \
   apt-get update --quiet \
-  && apt-get upgrade \
+  && apt-get upgrade --yes --quiet \
   && apt-get install --yes --quiet --no-install-recommends \
     ca-certificates \
     wget \
@@ -68,7 +68,7 @@ ENV \
 # install GCC
 RUN \
   apt-get update --quiet \
-  && apt-get upgrade \
+  && apt-get upgrade --yes --quiet \
   && apt-get install --yes --quiet --no-install-recommends \
     libglib2.0-0 \
     apt-transport-https \

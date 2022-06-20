@@ -8,13 +8,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        distro: ['jammy']
         cmake_version: ['3.22.4', '3.23.2']
-        clang_major: [12, 13, 14]
-        gcc_major: [9, 10, 11, 12]
+        clang_major: [13, 14]
+        gcc_major: [10, 11, 12]
         qt_version: ['6.3.1']
 
         include:
-          - cmake_version: '3.23.2'
+          - distro: jammy
+            cmake_version: '3.23.2'
             clang_major: 14
             gcc_major: 12
             qt_version: '6.3.1'
@@ -48,6 +50,7 @@ jobs:
             arbmind/cmake-gcc:${{ matrix.cmake_version }}-${{ matrix.gcc_major }}
             ${{ matrix.gcc_tags }}
           build-args: |
+            DISTRO=${{ matrix.distro }}
             GCC_MAJOR=${{ matrix.gcc_major }}
             QT_VERSION=${{ matrix.qt_version }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
@@ -61,6 +64,7 @@ jobs:
             arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc_major }}-${{ matrix.qt_version }}
             ${{ matrix.gcc_qt_tags }}
           build-args: |
+            DISTRO=${{ matrix.distro }}
             GCC_MAJOR=${{ matrix.gcc_major }}
             QT_VERSION=${{ matrix.qt_version }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
@@ -74,6 +78,7 @@ jobs:
             arbmind/cmake-clang:${{ matrix.cmake_version }}-${{ matrix.clang_major }}
             ${{ matrix.clang_tags }}
           build-args: |
+            DISTRO=${{ matrix.distro }}
             CLANG_MAJOR=${{ matrix.clang_major }}
             QT_VERSION=${{ matrix.qt_version }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
@@ -87,6 +92,7 @@ jobs:
             arbmind/cmake-clang-libstdcpp:${{ matrix.cmake_version }}-${{ matrix.clang_major }}-${{ matrix.gcc_major }}
             ${{ matrix.clang_libstdcpp_tags }}
           build-args: |
+            DISTRO=${{ matrix.distro }}
             CLANG_MAJOR=${{ matrix.clang_major }}
             GCC_MAJOR=${{ matrix.gcc_major }}
             QT_VERSION=${{ matrix.qt_version }}
@@ -101,6 +107,7 @@ jobs:
             arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang_major }}-${{ matrix.gcc_major }}-${{ matrix.qt_version }}
             ${{ matrix.clang_libstdcpp_qt_tags }}
           build-args: |
+            DISTRO=${{ matrix.distro }}
             CLANG_MAJOR=${{ matrix.clang_major }}
             GCC_MAJOR=${{ matrix.gcc_major }}
             QT_VERSION=${{ matrix.qt_version }}
