@@ -8,16 +8,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cmake_version: ['3.22.4', '3.23.1']
+        cmake_version: ['3.22.4', '3.23.2']
         clang_major: [12, 13, 14]
-        gcc_major: [9, 10, 11]
-        qt_version: ['6.3.0']
+        gcc_major: [9, 10, 11, 12]
+        qt_version: ['6.3.1']
 
         include:
-          - cmake_version: '3.23.1'
+          - cmake_version: '3.23.2'
             clang_major: 14
-            gcc_major: 11
-            qt_version: '6.3.0'
+            gcc_major: 12
+            qt_version: '6.3.1'
             gcc_tags: arbmind/cmake-gcc:latest
             gcc_qt_tags: arbmind/cmake-gcc-qt:latest
             clang_tags: arbmind/cmake-clang:latest
