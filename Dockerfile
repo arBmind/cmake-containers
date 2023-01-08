@@ -7,6 +7,27 @@ ARG QT_MODULES=""
 ARG CMAKE_VERSION=3.22.3
 ARG CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
 ARG RUNTIME_APT="libicu70 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
+# use "cmake-gcc-qt" or "cmake-clang-libstdcpp-qt"
+ARG QTGUI_BASE_IMAGE="cmake-gcc-qt"
+# note: these depend on distro and Qt version
+ARG QTGUI_PACKAGES=libegl-dev \
+  libglu1-mesa-dev \
+  libgl-dev \
+  libopengl-dev \
+  libxkbcommon-dev \
+  libfontconfig1-dev \
+  xdg-utils \
+  libxcb-keysyms1 \
+  libxcb-render-util0 \
+  libxcb-xfixes0 \
+  libxcb-icccm4 \
+  libxcb-image0 \
+  libxcb-shape0 \
+  libgssapi-krb5-2 \
+  libxcb-xinerama0 \
+  libxcb-xkb1 \
+  libxkbcommon-x11-0 \
+  libxcb-randr0
 
 # base Qt setup
 FROM python:3.10-slim as qt_base
@@ -235,3 +256,17 @@ ENV \
   QTDIR=/qt/${QT_VERSION}/${QT_ARCH} \
   PATH=/qt/${QT_VERSION}/${QT_ARCH}/bin:/opt/cmake/bin:${PATH} \
   LD_LIBRARY_PATH=/qt/${QT_VERSION}/${QT_ARCH}/lib:${LD_LIBRARY_PATH}
+
+
+# final qtqui (as developer setup)
+FROM ${QTGUI_BASE_IMAGE} AS cmake-qtgui-dev
+ARG QTGUI_PACKAGES
+
+RUN \
+  apt update --quiet \
+  && apt-get install --yes --quiet --no-install-recommends \
+    ${QTGUI_PACKAGES} \
+    gdb \
+  && apt-get --yes autoremove \
+  && apt-get clean autoclean \
+  && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
