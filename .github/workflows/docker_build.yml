@@ -9,17 +9,17 @@ jobs:
       fail-fast: false
       matrix:
         distro: ['jammy']
-        cmake_version: ['3.25.3', '3.26.2']
+        cmake_version: ['3.25.3', '3.26.3']
         clang_major: [14, 15, 16]
         gcc_major: [10, 11, 12]
-        qt_version: ['6.3.2', '6.4.2']
+        qt_version: ['6.4.3', '6.5.0']
 
         include:
           - distro: jammy
-            cmake_version: '3.26.2'
+            cmake_version: '3.26.3'
             clang_major: 16
             gcc_major: 12
-            qt_version: '6.4.2'
+            qt_version: '6.5.0'
             gcc_tags: arbmind/cmake-gcc:latest
             gcc_qt_tags: arbmind/cmake-gcc-qt:latest
             gcc_qtgui_tags: arbmind/cmake-gcc-qtgui-dev:latest
