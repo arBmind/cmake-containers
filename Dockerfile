@@ -1,12 +1,20 @@
-ARG DISTRO=focal
-ARG CLANG_MAJOR=13
-ARG GCC_MAJOR=11
+ARG DISTRO=lunar
+ARG CLANG_MAJOR=16
+# clang source options:
+# apt - directly use apt version
+# llvm - add llvm distro repo
+ARG CLANG_SOURCE=apt
+ARG GCC_MAJOR=13
+# gcc source options:
+# apt - directly use apt version
+# ppa - add toolchain ppa
+ARG GCC_SOURCE=apt
 ARG QT_ARCH=gcc_64
-ARG QT_VERSION=6.2.4
+ARG QT_VERSION=6.5.0
 ARG QT_MODULES=""
-ARG CMAKE_VERSION=3.22.3
+ARG CMAKE_VERSION=3.26.3
 ARG CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
-ARG RUNTIME_APT="libicu70 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
+ARG RUNTIME_APT="libicu72 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
 # use "cmake-gcc-qt" or "cmake-clang-libstdcpp-qt"
 ARG QTGUI_BASE_IMAGE="cmake-gcc-qt"
 # note: these depend on distro and Qt version
@@ -78,6 +86,7 @@ RUN \
 FROM ubuntu:${DISTRO} AS gcc_base
 ARG DISTRO
 ARG GCC_MAJOR
+ARG GCC_SOURCE
 ARG RUNTIME_APT
 ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 ARG DEBIAN_FRONTEND=noninteractive
@@ -96,9 +105,11 @@ RUN \
     ca-certificates \
     gnupg \
     wget \
-  && wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60c317803a41ba51845e371a1e9377a2ba9ef27f" | apt-key add - \
-  && echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/gcc.list \
-  && apt-get update --quiet \
+  && if [ "$GCC_SOURCE" = "ppa" ] ; then \
+    wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60c317803a41ba51845e371a1e9377a2ba9ef27f" | apt-key add - \
+    && echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/gcc.list \
+    && apt-get update --quiet \
+    ; fi \
   && apt-get install --yes --quiet --no-install-recommends \
     git \
     ninja-build \
@@ -152,6 +163,7 @@ ENV \
 FROM ubuntu:${DISTRO} AS clang_base
 ARG DISTRO
 ARG CLANG_MAJOR
+ARG CLANG_SOURCE
 ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 ARG DEBIAN_FRONTEND=noninteractive
 ARG RUNTIME_APT
@@ -169,9 +181,11 @@ RUN apt-get update --quiet \
     gnupg \
     apt-transport-https \
     ca-certificates \
-  && wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
-  && echo "deb http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO}-${CLANG_MAJOR} main" > /etc/apt/sources.list.d/llvm.list \
-  && apt-get update --quiet \
+  && if [ "$CLANG_SOURCE" = "llvm" ] ; then \
+    wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
+    && echo "deb http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO}-${CLANG_MAJOR} main" > /etc/apt/sources.list.d/llvm.list \
+    && apt-get update --quiet \
+    ; fi \
   && apt-get install --yes --quiet --no-install-recommends \
     git \
     ninja-build \
@@ -211,13 +225,16 @@ ENV \
 FROM clang_base AS clang_libstdcpp_base
 ARG DISTRO
 ARG GCC_MAJOR
+ARG GCC_SOURCE
 ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN \
-  wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60c317803a41ba51845e371a1e9377a2ba9ef27f" | apt-key add - \
-  && echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/gcc.list \
-  && apt-get update --quiet \
+  if [ "$GCC_SOURCE" = "ppa" ] ; then \
+    wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60c317803a41ba51845e371a1e9377a2ba9ef27f" | apt-key add - \
+    && echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/gcc.list \
+    && apt-get update --quiet \
+    ; fi \
   && apt-get install --yes --quiet --no-install-recommends \
     libstdc++-${GCC_MAJOR}-dev \
   && apt-get --yes autoremove \
