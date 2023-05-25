@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         distro: ['lunar']
-        cmake_version: ['3.25.3', '3.26.3']
+        cmake_version: ['3.25.3', '3.26.4']
         clang: [
           {major: 14, source: 'apt'},
           {major: 15, source: 'apt'},
@@ -20,14 +20,14 @@ jobs:
           {major: 12, source: 'apt'},
           {major: 13, source: 'apt'}
         ]
-        qt_version: ['6.4.3', '6.5.0']
+        qt_version: ['6.4.3', '6.5.1']
 
         include:
           - distro: lunar
-            cmake_version: '3.26.3'
+            cmake_version: '3.26.4'
             clang: {major: 16, source: 'apt'}
             gcc: {major: 13, source: 'apt'}
-            qt_version: '6.5.0'
+            qt_version: '6.5.1'
             gcc_tags: arbmind/cmake-gcc:latest
             gcc_qt_tags: arbmind/cmake-gcc-qt:latest
             gcc_qtgui_tags: arbmind/cmake-gcc-qtgui-dev:latest
