@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         distro: ['lunar']
-        cmake_version: ['3.26.5', '3.27.0']
+        cmake_version: ['3.26.5', '3.27.1']
         clang: [
           {major: 14, source: 'apt'},
           {major: 15, source: 'apt'},
@@ -24,17 +24,31 @@ jobs:
 
         include:
           - distro: lunar
-            cmake_version: '3.27.0'
+            cmake_version: '3.27.1'
             clang: {major: 16, source: 'apt'}
             gcc: {major: 13, source: 'apt'}
             qt_version: '6.5.2'
-            gcc_tags: arbmind/cmake-gcc:latest
-            gcc_qt_tags: arbmind/cmake-gcc-qt:latest
-            gcc_qtgui_tags: arbmind/cmake-gcc-qtgui-dev:latest
-            clang_tags: arbmind/cmake-clang:latest
-            clang_libstdcpp_tags: arbmind/cmake-clang-libstdcpp:latest
-            clang_libstdcpp_qt_tags: arbmind/cmake-clang-libstdcpp-qt:latest
-            clang_libstdcpp_qtgui_tags: arbmind/cmake-clang-libstdcpp-qtgui-dev:latest
+            gcc_tags: |
+              arbmind/cmake-gcc:latest
+              ghcr.io/arbmind/cmake-gcc:latest
+            gcc_qt_tags: |
+              arbmind/cmake-gcc-qt:latest
+              ghcr.io/arbmind/cmake-gcc-qt:latest
+            gcc_qtgui_tags: |
+              arbmind/cmake-gcc-qtgui-dev:latest
+              ghcr.io/arbmind/cmake-gcc-qtgui-dev:latest
+            clang_tags: |
+              arbmind/cmake-clang:latest
+              ghcr.io/arbmind/cmake-clang:latest
+            clang_libstdcpp_tags: |
+              arbmind/cmake-clang-libstdcpp:latest
+              ghcr.io/arbmind/cmake-clang-libstdcpp:latest
+            clang_libstdcpp_qt_tags: |
+              arbmind/cmake-clang-libstdcpp-qt:latest
+              ghcr.io/arbmind/cmake-clang-libstdcpp-qt:latest
+            clang_libstdcpp_qtgui_tags: |
+              arbmind/cmake-clang-libstdcpp-qtgui-dev:latest
+              ghcr.io/arbmind/cmake-clang-libstdcpp-qtgui-dev:latest
 
     runs-on: ubuntu-latest
     steps:
@@ -50,6 +64,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: CMake ${{ matrix.cmake_version }} + GCC ${{ matrix.gcc.major }}
         uses: docker/build-push-action@v3
         with:
@@ -58,6 +80,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-gcc:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}
+            ghcr.io/arbmind/cmake-gcc:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}
             ${{ matrix.gcc_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -73,6 +96,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            ghcr.io/arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
             ${{ matrix.gcc_qt_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -88,9 +112,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-gcc-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            ghcr.io/arbmind/cmake-gcc-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
             ${{ matrix.gcc_qtgui_tags }}
           labels: |
             Description="Ubuntu ${{ matrix.distro }} - Gcc${{ matrix.gcc.major }} + CMake ${{ matrix.cmake_version }} + QtGui ${{ matrix.qt_version }} + Dev"
+            org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
           build-args: |
             DISTRO=${{ matrix.distro }}
             GCC_MAJOR=${{ matrix.gcc.major }}
@@ -106,6 +132,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-clang:${{ matrix.cmake_version }}-${{ matrix.clang.major }}
+            ghcr.io/arbmind/cmake-clang:${{ matrix.cmake_version }}-${{ matrix.clang.major }}
             ${{ matrix.clang_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -121,6 +148,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-clang-libstdcpp:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}
+            ghcr.io/arbmind/cmake-clang-libstdcpp:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}
             ${{ matrix.clang_libstdcpp_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -138,6 +166,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            ghcr.io/arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
             ${{ matrix.clang_libstdcpp_qt_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -155,9 +184,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             arbmind/cmake-clang-libstdcpp-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            ghcr.io/arbmind/cmake-clang-libstdcpp-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
             ${{ matrix.clang_libstdcpp_qtgui_tags }}
           labels: |
             Description="Ubuntu ${{ matrix.distro }} - Clang${{ matrix.clang.major }} + Libstdc++-${{ matrix.gcc.major }} + CMake ${{ matrix.cmake_version }} + QtGui ${{ matrix.qt_version }} + Dev"
+            org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
           build-args: |
             DISTRO=${{ matrix.distro }}
             CLANG_MAJOR=${{ matrix.clang.major }}

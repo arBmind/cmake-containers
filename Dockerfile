@@ -135,6 +135,7 @@ ARG GCC_MAJOR
 ARG CMAKE_VERSION
 
 LABEL Description="Ubuntu ${DISTRO} - Gcc${GCC_MAJOR} + CMake ${CMAKE_VERSION}"
+LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
@@ -150,6 +151,7 @@ ARG QT_VERSION
 ARG QT_ARCH
 
 LABEL Description="Ubuntu ${DISTRO} - Gcc${GCC_MAJOR} + CMake ${CMAKE_VERSION} + Qt ${QT_VERSION}"
+LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
@@ -216,6 +218,7 @@ ARG CLANG_MAJOR
 ARG CMAKE_VERSION
 
 LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + CMake ${CMAKE_VERSION}"
+LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
@@ -250,6 +253,7 @@ ARG GCC_MAJOR
 ARG CMAKE_VERSION
 
 LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + Libstdc++-${GCC_MAJOR} + CMake ${CMAKE_VERSION}"
+LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
@@ -266,6 +270,7 @@ ARG QT_VERSION
 ARG QT_ARCH
 
 LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + Libstdc++-${GCC_MAJOR} + CMake ${CMAKE_VERSION} + Qt ${QT_VERSION}"
+LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
