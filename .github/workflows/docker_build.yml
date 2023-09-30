@@ -20,7 +20,7 @@ jobs:
           {major: 12, source: 'apt'},
           {major: 13, source: 'apt'}
         ]
-        qt_version: ['6.4.3', '6.5.2']
+        qt_version: ['6.4.3', '6.5.3']
 
         include:
           - distro: lunar
