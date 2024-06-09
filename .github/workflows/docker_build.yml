@@ -8,26 +8,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: ['lunar']
-        cmake_version: ['3.26.5', '3.27.6']
+        distro: ['noble']
+        cmake_version: ['3.28.6', '3.29.5']
         clang: [
-          {major: 15, source: 'apt'},
           {major: 16, source: 'apt'},
-          {major: 17, source: 'llvm'}
+          {major: 17, source: 'llvm'},
+          {major: 18, source: 'llvm'}
         ]
         gcc: [
-          {major: 11, source: 'apt'},
           {major: 12, source: 'apt'},
-          {major: 13, source: 'apt'}
+          {major: 13, source: 'apt'},
+          {major: 14, source: 'apt'}
         ]
-        qt_version: ['6.4.3', '6.5.3']
+        qt: [
+          {version: '6.5.3', arch: 'gcc_64'},
+          {version: '6.6.3', arch: 'gcc_64'},
+          {version: '6.7.1', arch: 'linux_gcc_64'}
+        ]
 
         include:
-          - distro: lunar
-            cmake_version: '3.27.6'
-            clang: {major: 17, source: 'llvm'}
-            gcc: {major: 13, source: 'apt'}
-            qt_version: '6.5.2'
+          - distro: noble
+            cmake_version: '3.29.5'
+            clang: {major: 18, source: 'llvm'}
+            gcc: {major: 14, source: 'apt'}
+            qt: {version: '6.7.1', arch: 'linux_gcc_64'}
             gcc_tags: |
               arbmind/cmake-gcc:latest
               ghcr.io/arbmind/cmake-gcc:latest
@@ -86,42 +90,45 @@ jobs:
             DISTRO=${{ matrix.distro }}
             GCC_MAJOR=${{ matrix.gcc.major }}
             GCC_SOURCE=${{ matrix.gcc.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
 
-      - name: CMake ${{ matrix.cmake_version }} + GCC ${{ matrix.gcc.major }} + Qt ${{ matrix.qt_version }}
+      - name: CMake ${{ matrix.cmake_version }} + GCC ${{ matrix.gcc.major }} + Qt ${{ matrix.qt.version }}
         uses: docker/build-push-action@v3
         with:
           target: cmake-gcc-qt
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
-            ghcr.io/arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
+            ghcr.io/arbmind/cmake-gcc-qt:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
             ${{ matrix.gcc_qt_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
             GCC_MAJOR=${{ matrix.gcc.major }}
             GCC_SOURCE=${{ matrix.gcc.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
 
-      - name: CMake ${{ matrix.cmake_version }} + GCC ${{ matrix.gcc.major }} + QtGui ${{ matrix.qt_version }} + Dev
+      - name: CMake ${{ matrix.cmake_version }} + GCC ${{ matrix.gcc.major }} + QtGui ${{ matrix.qt.version }} + Dev
         uses: docker/build-push-action@v3
         with:
           target: cmake-qtgui-dev
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            arbmind/cmake-gcc-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
-            ghcr.io/arbmind/cmake-gcc-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            arbmind/cmake-gcc-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
+            ghcr.io/arbmind/cmake-gcc-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
             ${{ matrix.gcc_qtgui_tags }}
           labels: |
-            Description="Ubuntu ${{ matrix.distro }} - Gcc${{ matrix.gcc.major }} + CMake ${{ matrix.cmake_version }} + QtGui ${{ matrix.qt_version }} + Dev"
+            Description="Ubuntu ${{ matrix.distro }} - Gcc${{ matrix.gcc.major }} + CMake ${{ matrix.cmake_version }} + QtGui ${{ matrix.qt.version }} + Dev"
             org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
           build-args: |
             DISTRO=${{ matrix.distro }}
             GCC_MAJOR=${{ matrix.gcc.major }}
             GCC_SOURCE=${{ matrix.gcc.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
             QTGUI_BASE_IMAGE=cmake-gcc-qt
 
@@ -138,7 +145,8 @@ jobs:
             DISTRO=${{ matrix.distro }}
             CLANG_MAJOR=${{ matrix.clang.major }}
             CLANG_SOURCE=${{ matrix.clang.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
 
       - name: CMake ${{ matrix.cmake_version }} + Clang ${{ matrix.clang.major }} + LibStdC++ ${{ matrix.gcc.major }}
@@ -156,17 +164,18 @@ jobs:
             CLANG_SOURCE=${{ matrix.clang.source }}
             GCC_MAJOR=${{ matrix.gcc.major }}
             GCC_SOURCE=${{ matrix.gcc.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
 
-      - name: CMake ${{ matrix.cmake_version }} + Clang ${{ matrix.clang.major }} + LibStdC++ ${{ matrix.gcc.major }} + Qt ${{ matrix.qt_version }}
+      - name: CMake ${{ matrix.cmake_version }} + Clang ${{ matrix.clang.major }} + LibStdC++ ${{ matrix.gcc.major }} + Qt ${{ matrix.qt.version }}
         uses: docker/build-push-action@v3
         with:
           target: cmake-clang-libstdcpp-qt
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
-            ghcr.io/arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
+            ghcr.io/arbmind/cmake-clang-libstdcpp-qt:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
             ${{ matrix.clang_libstdcpp_qt_tags }}
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -174,20 +183,21 @@ jobs:
             CLANG_SOURCE=${{ matrix.clang.source }}
             GCC_MAJOR=${{ matrix.gcc.major }}
             GCC_SOURCE=${{ matrix.gcc.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
 
-      - name: CMake ${{ matrix.cmake_version }} + Clang ${{ matrix.clang.major }} + LibStdC++ ${{ matrix.gcc.major }} + QtGui ${{ matrix.qt_version }} + Dev
+      - name: CMake ${{ matrix.cmake_version }} + Clang ${{ matrix.clang.major }} + LibStdC++ ${{ matrix.gcc.major }} + QtGui ${{ matrix.qt.version }} + Dev
         uses: docker/build-push-action@v3
         with:
           target: cmake-qtgui-dev
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            arbmind/cmake-clang-libstdcpp-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
-            ghcr.io/arbmind/cmake-clang-libstdcpp-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt_version }}
+            arbmind/cmake-clang-libstdcpp-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
+            ghcr.io/arbmind/cmake-clang-libstdcpp-qtgui-dev:${{ matrix.cmake_version }}-${{ matrix.clang.major }}-${{ matrix.gcc.major }}-${{ matrix.qt.version }}
             ${{ matrix.clang_libstdcpp_qtgui_tags }}
           labels: |
-            Description="Ubuntu ${{ matrix.distro }} - Clang${{ matrix.clang.major }} + Libstdc++-${{ matrix.gcc.major }} + CMake ${{ matrix.cmake_version }} + QtGui ${{ matrix.qt_version }} + Dev"
+            Description="Ubuntu ${{ matrix.distro }} - Clang${{ matrix.clang.major }} + Libstdc++-${{ matrix.gcc.major }} + CMake ${{ matrix.cmake_version }} + QtGui ${{ matrix.qt.version }} + Dev"
             org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
           build-args: |
             DISTRO=${{ matrix.distro }}
@@ -195,6 +205,7 @@ jobs:
             CLANG_SOURCE=${{ matrix.clang.source }}
             GCC_MAJOR=${{ matrix.gcc.major }}
             GCC_SOURCE=${{ matrix.gcc.source }}
-            QT_VERSION=${{ matrix.qt_version }}
+            QT_VERSION=${{ matrix.qt.version }}
+            QT_ARCH=${{ matrix.qt.arch }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
             QTGUI_BASE_IMAGE=cmake-clang-libstdcpp-qt

@@ -1,20 +1,25 @@
-ARG DISTRO=lunar
-ARG CLANG_MAJOR=16
+ARG DISTRO=noble
+ARG CLANG_MAJOR=18
 # clang source options:
 # apt - directly use apt version
 # llvm - add llvm distro repo
-ARG CLANG_SOURCE=apt
-ARG GCC_MAJOR=13
+ARG CLANG_SOURCE=llvm
+ARG GCC_MAJOR=14
 # gcc source options:
 # apt - directly use apt version
 # ppa - add toolchain ppa
 ARG GCC_SOURCE=apt
 ARG QT_ARCH=gcc_64
-ARG QT_VERSION=6.5.0
+ARG QT_VERSION=6.7.1
 ARG QT_MODULES=""
-ARG CMAKE_VERSION=3.26.3
+ARG CLANG_QT_URL=https://github.com/arBmind/qt5/releases/download/v6.5.3/qt653_clang17.tgz
+ARG QT_EXTRAS_URL=https://github.com/arBmind/qt5/releases/download/v6.5.3/extra_libs.tgz
+ARG CMAKE_VERSION=3.29.5
 ARG CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
-ARG RUNTIME_APT="libicu72 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
+# Ubuntu lunar
+#ARG RUNTIME_APT="libicu72 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
+# Ubuntu noble
+ARG RUNTIME_APT="libicu74 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
 # use "cmake-gcc-qt" or "cmake-clang-libstdcpp-qt"
 ARG QTGUI_BASE_IMAGE="cmake-gcc-qt"
 # note: these depend on distro and Qt version
@@ -156,9 +161,9 @@ LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-contai
 COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
 ENV \
-  QTDIR=/qt/${QT_VERSION}/${QT_ARCH} \
-  PATH=/qt/${QT_VERSION}/${QT_ARCH}/bin:/opt/cmake/bin:${PATH} \
-  LD_LIBRARY_PATH=/qt/${QT_VERSION}/${QT_ARCH}/lib:${LD_LIBRARY_PATH}
+  QTDIR=/qt/${QT_VERSION}/gcc_64 \
+  PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH} \
+  LD_LIBRARY_PATH=/qt/${QT_VERSION}/gcc_64/lib:${LD_LIBRARY_PATH}
 
 
 # base compiler setup for Clang
@@ -225,6 +230,31 @@ ENV \
   PATH=/opt/cmake/bin:${PATH}
 
 
+# final cmake-clang-qt (with Qt)
+FROM clang_base AS cmake-clang-qt
+ARG DISTRO
+ARG CLANG_MAJOR
+ARG CMAKE_VERSION
+ARG QT_VERSION
+ARG CLANG_QT_URL
+ARG QT_EXTRAS_URL
+
+LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + CMake ${CMAKE_VERSION} + Qt ${QT_VERSION}"
+LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-containers"
+
+COPY --from=cmake_base /opt/cmake /opt/cmake
+RUN \
+  mkdir -p /opt/qt${QT_VERSION} \
+  && wget -q -c ${CLANG_QT_URL} -O - | tar --strip-components=1 -xz -C /opt/qt${QT_VERSION} \
+  && wget -q -c ${QT_EXTRAS_URL} -O - | tar --strip-components=1 -xz -C /opt/qt${QT_VERSION}/lib
+
+ENV \
+  QTDIR=/opt/qt${QT_VERSION} \
+  PATH=/opt/qt${QT_VERSION}/bin:/opt/cmake/bin:${PATH} \
+  LD_LIBRARY_PATH=/opt/qt${QT_VERSION}/lib:${LD_LIBRARY_PATH}
+
+
+
 FROM clang_base AS clang_libstdcpp_base
 ARG DISTRO
 ARG GCC_MAJOR
@@ -275,9 +305,9 @@ LABEL org.opencontainers.image.source = "https://github.com/arBmind/cmake-contai
 COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
 ENV \
-  QTDIR=/qt/${QT_VERSION}/${QT_ARCH} \
-  PATH=/qt/${QT_VERSION}/${QT_ARCH}/bin:/opt/cmake/bin:${PATH} \
-  LD_LIBRARY_PATH=/qt/${QT_VERSION}/${QT_ARCH}/lib:${LD_LIBRARY_PATH}
+  QTDIR=/qt/${QT_VERSION}/gcc_64 \
+  PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH} \
+  LD_LIBRARY_PATH=/qt/${QT_VERSION}/gcc_64/lib:${LD_LIBRARY_PATH}
 
 
 # final qtqui (as developer setup)
