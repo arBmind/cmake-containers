@@ -9,11 +9,11 @@ jobs:
       fail-fast: false
       matrix:
         distro: ['noble']
-        cmake_version: ['3.29.7', '3.30.2']
+        cmake_version: ['3.30.6', '3.31.2']
         clang: [
-          {major: 16, source: 'apt'},
-          {major: 17, source: 'llvm'},
-          {major: 18, source: 'llvm'}
+          {major: 17, source: 'apt'},
+          {major: 18, source: 'llvm'},
+          {major: 19, source: 'llvm'}
         ]
         gcc: [
           {major: 12, source: 'apt'},
@@ -21,17 +21,17 @@ jobs:
           {major: 14, source: 'apt'}
         ]
         qt: [
-          {version: '6.5.3', arch: 'gcc_64'},
           {version: '6.6.3', arch: 'gcc_64'},
-          {version: '6.7.2', arch: 'linux_gcc_64'}
+          {version: '6.7.3', arch: 'linux_gcc_64'},
+          {version: '6.8.1', arch: 'linux_gcc_64'}
         ]
 
         include:
           - distro: noble
-            cmake_version: '3.30.2'
-            clang: {major: 18, source: 'llvm'}
+            cmake_version: '3.31.2'
+            clang: {major: 19, source: 'llvm'}
             gcc: {major: 14, source: 'apt'}
-            qt: {version: '6.7.2', arch: 'linux_gcc_64'}
+            qt: {version: '6.8.1', arch: 'linux_gcc_64'}
             gcc_tags: |
               arbmind/cmake-gcc:latest
               ghcr.io/arbmind/cmake-gcc:latest
