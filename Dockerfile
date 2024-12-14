@@ -55,12 +55,12 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN pip install aqtinstall
 
 RUN <<INSTALL_7ZIP
-  apt update --quiet
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq update -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     p7zip-full \
     libglib2.0-0
-  apt-get --yes autoremove
-  apt-get clean autoclean
+  apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
+  apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 INSTALL_7ZIP
 
@@ -80,13 +80,13 @@ ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN <<INSTALL_WGET
-  apt-get update --quiet
-  apt-get upgrade --yes --quiet
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq update -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes upgrade -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     ca-certificates \
     wget
-  apt-get --yes autoremove
-  apt-get clean autoclean
+  apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
+  apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 INSTALL_WGET
 
@@ -112,9 +112,9 @@ ENV \
 
 RUN <<INSTALL_GCC
   set -e
-  apt-get update --quiet
-  apt-get upgrade --yes --quiet
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq update -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes upgrade -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     libglib2.0-0 \
     apt-transport-https \
     ca-certificates \
@@ -123,9 +123,9 @@ RUN <<INSTALL_GCC
   if [ "$GCC_SOURCE" = "ppa" ] ; then
     wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60c317803a41ba51845e371a1e9377a2ba9ef27f" | apt-key add -
     echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/gcc.list
-    apt-get update --quiet
+    apt-get -qq update -o=Dpkg::Use-Pty=0
   fi
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     git \
     ninja-build \
     make \
@@ -138,8 +138,8 @@ RUN <<INSTALL_GCC
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${GCC_MAJOR} 100
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_MAJOR} 100
   c++ --version
-  apt-get --yes autoremove
-  apt-get clean autoclean
+  apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
+  apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 INSTALL_GCC
 
@@ -195,9 +195,9 @@ ENV \
 
 # install Clang (https://apt.llvm.org/)
 RUN <<INSTALL_CLANG
-  apt-get update --quiet
-  apt-get upgrade --yes --quiet
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq update -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes upgrade -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     libglib2.0-0 \
     wget \
     gnupg \
@@ -206,9 +206,9 @@ RUN <<INSTALL_CLANG
   if [ "$CLANG_SOURCE" = "llvm" ] ; then
     wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
     echo "deb http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO}-${CLANG_MAJOR} main" > /etc/apt/sources.list.d/llvm.list
-    apt-get update --quiet
+    apt-get -qq update -o=Dpkg::Use-Pty=0
   fi
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     git \
     ninja-build \
     make \
@@ -226,8 +226,8 @@ RUN <<INSTALL_CLANG
   update-alternatives --install /usr/bin/ld ld /usr/bin/ld.gold 20
   update-alternatives --install /usr/bin/ld ld /usr/bin/ld.bfd 30
   c++ --version
-  apt-get --yes autoremove
-  apt-get clean autoclean
+  apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
+  apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 INSTALL_CLANG
 
@@ -282,12 +282,12 @@ RUN <<INSTALL_LIBSTDCPP
   if [ "$GCC_SOURCE" = "ppa" ] ; then
     wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60c317803a41ba51845e371a1e9377a2ba9ef27f" | apt-key add -
     echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/gcc.list
-    apt-get update --quiet
+    apt-get -qq update -o=Dpkg::Use-Pty=0
   fi
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     libstdc++-${GCC_MAJOR}-dev
-  apt-get --yes autoremove
-  apt-get clean autoclean
+  apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
+  apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 INSTALL_LIBSTDCPP
 
@@ -335,11 +335,11 @@ FROM ${QTGUI_BASE_IMAGE} AS cmake-qtgui-dev
 ARG QTGUI_PACKAGES
 
 RUN <<INSTALL_QTGUI_PACKAGES
-  apt update --quiet
-  apt-get install --yes --quiet --no-install-recommends \
+  apt-get -qq update -o=Dpkg::Use-Pty=0
+  apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     ${QTGUI_PACKAGES} \
     gdb
-  apt-get --yes autoremove
-  apt-get clean autoclean
+  apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
+  apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 INSTALL_QTGUI_PACKAGES
