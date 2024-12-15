@@ -4,7 +4,7 @@ on: push
 
 jobs:
   define-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       cmake_versions: ${{ steps.matrix.outputs.cmake_versions }}
       qts: ${{ steps.matrix.outputs.qts }}
@@ -12,8 +12,22 @@ jobs:
       - name: Define Matrix
         id: matrix
         run: |
-          echo 'cmake_versions=["3.30.6", "3.31.2"]' >> "$GITHUB_OUTPUT"
-          echo 'qts=[{"version": "6.6.3", "arch": "gcc_64"}, {"version": "6.7.3", "arch": "linux_gcc_64"}, {"version": "6.8.1", "arch": "linux_gcc_64"}]' >> "$GITHUB_OUTPUT"
+          echo "cmake_versions=$(cat <<JSON_EOF | jq -c
+            [
+              "3.30.6",
+              "3.31.2"
+            ]
+          JSON_EOF
+          )" >> "$GITHUB_OUTPUT"
+
+          echo "qts=$(cat <<JSON_EOF | jq -c
+            [
+              {"version": "6.6.3", "arch": "gcc_64"},
+              {"version": "6.7.3", "arch": "linux_gcc_64"},
+              {"version": "6.8.1", "arch": "linux_gcc_64"}
+            ]
+          JSON_EOF
+          )" >> "$GITHUB_OUTPUT"
 
   cmake:
     name: "CMake Docker builds"
@@ -24,7 +38,7 @@ jobs:
         cmake_version: ${{ fromJSON(needs.define-matrix.outputs.cmake_versions) }}
         qt: ${{ fromJSON(needs.define-matrix.outputs.qts) }}
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main

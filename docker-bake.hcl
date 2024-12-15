@@ -30,6 +30,18 @@ function "default_qts" {
     {version: "6.8.1", arch: "linux_gcc_64"}
   ]
 }
+function "targets" {
+  params = []
+  result = [
+    "cmake-gcc",
+    "cmake-gcc-qt",
+    "cmake-gcc-qtgui-dev",
+    "cmake-clang",
+    "cmake-clang-libstdcpp",
+    "cmake-clang-libstdcpp-qt",
+    "cmake-clang-libstdcpp-qtgui-dev"
+  ]
+}
 
 variable "DISTROS" {
   default = jsonencode(default_distros())
@@ -75,8 +87,8 @@ function "clangs" {
   result = jsondecode(ALL_CLANGS)
 }
 function "matrix_clangs" {
-  params = []
-  result = jsondecode(CLANGS)
+  params = [target]
+  result = length(regexall("-clang(?:-|$)", target)) > 0 ? jsondecode(CLANGS) : [{major: "", source: ""}]
 }
 
 variable "GCCS" {
@@ -91,8 +103,8 @@ function "gccs" {
   result = jsondecode(ALL_GCCS)
 }
 function "matrix_gccs" {
-  params = []
-  result = jsondecode(GCCS)
+  params = [target]
+  result = length(regexall("-(?:gcc|libstdcpp)(?:-|$)", target)) > 0 ? jsondecode(GCCS) : [{major: "", source: ""}]
 }
 
 variable "QTS" {
@@ -107,15 +119,37 @@ function "qts" {
   result = jsondecode(ALL_QTS)
 }
 function "matrix_qts" {
+  params = [target]
+  result = length(regexall("-qt", target)) > 0 ? jsondecode(QTS) : [{version: "", arch: ""}]
+}
+
+function "matrix" {
   params = []
-  result = jsondecode(QTS)
+  result = flatten([for target in targets() :
+    flatten([for distro in matrix_distros() :
+      flatten([for cmake_version in matrix_cmake_versions() :
+        flatten([for clang in matrix_clangs(target) :
+          flatten([for gcc in matrix_gccs(target) :
+            [for qt in matrix_qts(target) : {
+              target: target,
+              distro: distro,
+              cmake_version: cmake_version,
+              clang: clang,
+              gcc: gcc,
+              qt: qt
+            }]
+          ])
+        ])
+      ])
+    ])
+  ])
 }
 
 function "latestTag" {
   params = [cmake_version, clang_major, gcc_major, qt_version]
   result = (cmake_version == cmake_versions()[length(cmake_versions())-1]
-    && (clang_major == "" || clang_major == clangs()[length(clangs()) - 1].major)
-    && (gcc_major == "" || gcc_major == gccs()[length(gccs()) - 1].major)
+    && (clang_major == "" || "X${clang_major}" == "X${clangs()[length(clangs()) - 1].major}")
+    && (gcc_major == "" || "X${gcc_major}" == "X${gccs()[length(gccs()) - 1].major}")
     && (qt_version == "" || qt_version == qts()[length(qts()) - 1].version)) ? "latest" : ""
 }
 function "versionTag" {
@@ -139,11 +173,11 @@ function "describeGcc" {
 }
 function "describeQt" {
   params = [target, version]
-  result = version == "" ? "" : (length(regexall("qtgui", target)) > 0 ? "QtGui ${version}" : "Qt ${version}")
+  result = version == "" ? "" : (length(regexall("qtgui-dev$", target)) > 0 ? "QtGui ${version} + Dev" : "Qt ${version}")
 }
 function "description" {
-  params = [target, distro, cmake_version, clang_major, gcc_major, qt_version, extra]
-  result = "Ubuntu ${distro} - ${join(" + ", compact(["CMake ${cmake_version}", describeClang(clang_major), describeGcc(target, gcc_major), describeQt(target, qt_version), extra]))}"
+  params = [target, distro, cmake_version, clang_major, gcc_major, qt_version]
+  result = "Ubuntu ${distro} - ${join(" + ", compact(["CMake ${cmake_version}", describeClang(clang_major), describeGcc(target, gcc_major), describeQt(target, qt_version)]))}"
 }
 function "uniqueName" {
   params = [target, distro, cmake_version, clang_major, gcc_major, qt_version]
@@ -153,194 +187,33 @@ function "dockerTarget" {
   params = [target]
   result = length(regexall("qtgui-dev$", target)) > 0 ? "cmake-qtgui-dev" : target
 }
-
-group "default" {
-  targets = [
-    "cmake-gcc",
-    "cmake-gcc-qt",
-    "cmake-gcc-qtgui-dev",
-    "cmake-clang",
-    "cmake-clang-libstdcpp",
-    "cmake-clang-libstdcpp-qt",
-    "cmake-clang-libstdcpp-qtgui-dev"
-  ]
+function "qtguiBaseImage" {
+  params = [target]
+  result = length(regexall("-clang-", target)) > 0 ? "cmake-clang-libstdcpp-qt" : "cmake-gcc-qt"
 }
 
-target "_common" {
+target "default" {
   dockerfile = "Dockerfile"
   context = "./"
+  target = dockerTarget(matrix.target)
+  name = uniqueName(matrix.target, matrix.distro, matrix.cmake_version, matrix.clang.major, matrix.gcc.major, matrix.qt.version)
+  tags = tags(matrix.target, matrix.cmake_version, matrix.clang.major, matrix.gcc.major, matrix.qt.version)
+  matrix = {
+    matrix = matrix()
+  }
+  args = {
+    DISTRO = matrix.distro
+    CMAKE_VERSION = matrix.cmake_version
+    CLANG_MAJOR = matrix.clang.major
+    CLANG_SOURCE = matrix.clang.source
+    GCC_MAJOR = matrix.gcc.major
+    GCC_SOURCE = matrix.gcc.source
+    QT_VERSION = matrix.qt.version
+    QT_ARCH = matrix.qt.arch
+    QTGUI_BASE_IMAGE = qtguiBaseImage(matrix.target)
+  }
   labels = {
     "org.opencontainers.image.source" = "https://github.com/arBmind/cmake-containers"
-  }
-}
-
-target "cmake-gcc" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, "", gcc.major, "")
-  tags = tags(name, cmake_version, "", gcc.major, "")
-  matrix = {
-    name = ["cmake-gcc"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    gcc = matrix_gccs(),
-  }
-  args = {
-    DISTRO = distro
-    GCC_MAJOR = gcc.major
-    GCC_SOURCE = gcc.source
-    CMAKE_VERSION = cmake_version
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, "", gcc.major, "", "")
-  }
-}
-target "cmake-gcc-qt" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, "", gcc.major, qt.version)
-  tags = tags(name, cmake_version, "", gcc.major, qt.version)
-  matrix = {
-    name = ["cmake-gcc-qt"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    gcc = matrix_gccs(),
-    qt = matrix_qts()
-  }
-  args = {
-    DISTRO = distro
-    GCC_MAJOR = gcc.major
-    GCC_SOURCE = gcc.source
-    QT_VERSION = qt.version
-    QT_ARCH = qt.arch
-    CMAKE_VERSION = cmake_version
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, "", gcc.major, qt.version, "")
-  }
-}
-target "cmake-gcc-qtgui-dev" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, "", gcc.major, qt.version)
-  tags = tags(name, cmake_version, "", gcc.major, qt.version)
-  matrix = {
-    name = ["cmake-gcc-qtgui-dev"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    gcc = matrix_gccs(),
-    qt = matrix_qts()
-  }
-  args = {
-    DISTRO = distro
-    GCC_MAJOR = gcc.major
-    GCC_SOURCE = gcc.source
-    QT_VERSION = qt.version
-    QT_ARCH = qt.arch
-    CMAKE_VERSION = cmake_version
-    QTGUI_BASE_IMAGE = "cmake-gcc-qt"
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, "", gcc.major, qt.version, "Dev")
-  }
-}
-target "cmake-clang" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, clang.major, "", "")
-  tags = tags(name, cmake_version, clang.major, "", "")
-  matrix = {
-    name = ["cmake-clang"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    clang = matrix_clangs(),
-  }
-  args = {
-    DISTRO = distro
-    CLANG_MAJOR = clang.major
-    CLANG_SOURCE = clang.source
-    CMAKE_VERSION = cmake_version
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, clang.major, "", "", "")
-  }
-}
-target "cmake-clang-libstdcpp" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, clang.major, gcc.major, "")
-  tags = tags(name, cmake_version, clang.major, gcc.major, "")
-  matrix = {
-    name = ["cmake-clang-libstdcpp"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    clang = matrix_clangs(),
-    gcc = matrix_gccs(),
-  }
-  args = {
-    DISTRO = distro
-    CLANG_MAJOR = clang.major
-    CLANG_SOURCE = clang.source
-    GCC_MAJOR = gcc.major
-    GCC_SOURCE = gcc.source
-    CMAKE_VERSION = cmake_version
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, clang.major, gcc.major, "", "")
-  }
-}
-target "cmake-clang-libstdcpp-qt" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, clang.major, gcc.major, qt.version)
-  tags = tags(name, cmake_version, clang.major, gcc.major, qt.version)
-  matrix = {
-    name = ["cmake-clang-libstdcpp-qt"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    clang = matrix_clangs(),
-    gcc = matrix_gccs(),
-    qt = matrix_qts()
-  }
-  args = {
-    DISTRO = distro
-    CLANG_MAJOR = clang.major
-    CLANG_SOURCE = clang.source
-    GCC_MAJOR = gcc.major
-    GCC_SOURCE = gcc.source
-    QT_VERSION = qt.version
-    QT_ARCH = qt.arch
-    CMAKE_VERSION = cmake_version
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, clang.major, gcc.major, qt.version, "")
-  }
-}
-target "cmake-clang-libstdcpp-qtgui-dev" {
-  inherits = ["_common"]
-  target = dockerTarget(name)
-  name = uniqueName(name, distro, cmake_version, clang.major, gcc.major, qt.version)
-  tags = tags(name, cmake_version, clang.major, gcc.major, qt.version)
-  matrix = {
-    name = ["cmake-clang-libstdcpp-qtgui-dev"],
-    distro = matrix_distros(),
-    cmake_version = matrix_cmake_versions(),
-    clang = matrix_clangs(),
-    gcc = matrix_gccs(),
-    qt = matrix_qts()
-  }
-  args = {
-    DISTRO = distro
-    CLANG_MAJOR = clang.major
-    CLANG_SOURCE = clang.source
-    GCC_MAJOR = gcc.major
-    GCC_SOURCE = gcc.source
-    QT_VERSION = qt.version
-    QT_ARCH = qt.arch
-    CMAKE_VERSION = cmake_version
-    QTGUI_BASE_IMAGE = "cmake-clang-libstdcpp-qt"
-  }
-  labels = {
-    Description = description(name, distro, cmake_version, clang.major, gcc.major, qt.version, "Dev")
+    Description = description(matrix.target, matrix.distro, matrix.cmake_version, matrix.clang.major, matrix.gcc.major, matrix.qt.version)
   }
 }
