@@ -30,99 +30,191 @@ function "default_qts" {
     {version: "6.8.1", arch: "linux_gcc_64"}
   ]
 }
-function "targets" {
-  params = []
-  result = [
-    "cmake-gcc",
-    "cmake-gcc-qt",
-    "cmake-gcc-qtgui-dev",
-    "cmake-clang",
-    "cmake-clang-libstdcpp",
-    "cmake-clang-libstdcpp-qt",
-    "cmake-clang-libstdcpp-qtgui-dev"
-  ]
-}
 
-variable "DISTROS" {
-  default = jsonencode(default_distros())
-  # default = jsonencode([default_distros()[length(default_distros()) - 1]]) # only latest
-}
+# note: we do not support multi distro build right now!
 variable "ALL_DISTROS" {
   default = jsonencode(default_distros())
 }
-function "distros" {
+variable "DISTROS" {
+  default = ALL_DISTROS
+  # default = jsonencode([default_distros()[length(default_distros()) - 1]]) # only latest
+}
+function "all_distros" {
   params = []
   result = jsondecode(ALL_DISTROS)
 }
+function "input_distros" {
+  params = []
+  result = flatten([jsondecode(DISTROS)])
+}
 function "matrix_distros" {
   params = []
-  result = jsondecode(DISTROS)
+  result = length(input_distros()) > 0 ? input_distros() : all_distros()
 }
 
-variable "CMAKE_VERSIONS" {
-  default = jsonencode(default_cmake_versions())
-  # default = jsonencode([default_cmake_versions()[length(default_cmake_versions()) - 1]]) # only latest
-}
 variable "ALL_CMAKE_VERSIONS" {
   default = jsonencode(default_cmake_versions())
 }
-function "cmake_versions" {
+variable "CMAKE_VERSIONS" {
+  default = ALL_CMAKE_VERSIONS
+  # default = jsonencode([default_cmake_versions()[length(default_cmake_versions()) - 1]]) # only latest
+}
+function "all_cmake_versions" {
   params = []
   result = jsondecode(ALL_CMAKE_VERSIONS)
 }
+function "input_cmake_versions" {
+  params = []
+  result = flatten([jsondecode(CMAKE_VERSIONS)])
+}
+function "latest_cmake_version" {
+  params = []
+  result = all_cmake_versions()[length(all_cmake_versions()) - 1]
+}
+function "has_cmake_versions" {
+  params = []
+  result = length(input_cmake_versions()) > 0
+}
 function "matrix_cmake_versions" {
   params = []
-  result = jsondecode(CMAKE_VERSIONS)
+  result = has_cmake_versions() ? input_cmake_versions() : [""]
+}
+function "is_latest_cmake_version" {
+  params = [version]
+  result = version != "" && latest_cmake_version() == version
 }
 
-variable "CLANGS" {
-  default = jsonencode(default_clangs())
-  # default = jsonencode([default_clangs()[length(default_clangs()) - 1]]) # only latest
-}
 variable "ALL_CLANGS" {
   default = jsonencode(default_clangs())
 }
-function "clangs" {
+variable "CLANGS" {
+  default = ALL_CLANGS
+  # default = jsonencode([default_clangs()[length(default_clangs()) - 1]]) # only latest
+}
+function "all_clangs" {
   params = []
   result = jsondecode(ALL_CLANGS)
 }
+function "input_clangs" {
+  params = []
+  result = flatten([jsondecode(CLANGS)])
+}
+function "latest_clang_major" {
+  params = []
+  result = all_clangs()[length(all_clangs()) - 1].major
+}
+function "has_clangs" {
+  params = []
+  result = length(input_clangs()) > 0
+}
+function "is_clang_target" {
+  params = [target]
+  result = length(regexall("-clang(?:-|$)", target)) > 0
+}
 function "matrix_clangs" {
   params = [target]
-  result = length(regexall("-clang(?:-|$)", target)) > 0 ? jsondecode(CLANGS) : [{major: "", source: ""}]
+  result = is_clang_target(target) && has_clangs() ? input_clangs() : [{major: "", source: ""}]
+}
+function "is_latest_clang_major" {
+  params = [clang_major]
+  # note: clang_major might be a number and types seems to get messed up
+  result = clang_major != "" && "X${clang_major}" == "X${latest_clang_major()}"
 }
 
-variable "GCCS" {
-  default = jsonencode(default_gccs())
-  # default = jsonencode([default_gccs()[length(default_gccs()) - 1]]) # only latest
-}
 variable "ALL_GCCS" {
   default = jsonencode(default_gccs())
 }
-function "gccs" {
+variable "GCCS" {
+  default = ALL_GCCS
+  # default = jsonencode([default_gccs()[length(default_gccs()) - 1]]) # only latest
+}
+function "all_gccs" {
   params = []
   result = jsondecode(ALL_GCCS)
 }
+function "input_gccs" {
+  params = []
+  result = flatten([jsondecode(GCCS)])
+}
+function "latest_gcc_major" {
+  params = []
+  result = all_gccs()[length(all_gccs()) - 1].major
+}
+function "has_gccs" {
+  params = []
+  result = length(input_gccs()) > 0
+}
+function "is_gcc_target" {
+  params = [target]
+  result = length(regexall("-(?:gcc|libstdcpp)(?:-|$)", target)) > 0
+}
 function "matrix_gccs" {
   params = [target]
-  result = length(regexall("-(?:gcc|libstdcpp)(?:-|$)", target)) > 0 ? jsondecode(GCCS) : [{major: "", source: ""}]
+  result = is_gcc_target(target) && has_gccs() ? input_gccs() : [{major: "", source: ""}]
+}
+function "is_latest_gcc_major" {
+  params = [gcc_major]
+  # note: gcc_major might be a number and types seems to get messed up
+  result = gcc_major != "" && "X${gcc_major}" == "X${latest_gcc_major()}"
 }
 
-variable "QTS" {
-  default = jsonencode(default_qts())
-  # default = jsonencode([default_qts()[length(default_qts()) - 1]]) # only latest
-}
 variable "ALL_QTS" {
   default = jsonencode(default_qts())
 }
-function "qts" {
+variable "QTS" {
+  default = ALL_QTS
+  # default = jsonencode([default_qts()[length(default_qts()) - 1]]) # only latest
+}
+function "all_qts" {
   params = []
   result = jsondecode(ALL_QTS)
 }
+function "input_qts" {
+  params = []
+  result = flatten([jsondecode(QTS)])
+}
+function "latest_qt_version" {
+  params = []
+  result = all_qts()[length(all_qts()) - 1].version
+}
+function "has_qts" {
+  params = []
+  result = length(input_qts()) > 0
+}
+function "is_qt_target" {
+  params = [target]
+  result = length(regexall("-qt", target)) > 0
+}
 function "matrix_qts" {
   params = [target]
-  result = length(regexall("-qt", target)) > 0 ? jsondecode(QTS) : [{version: "", arch: ""}]
+  result = is_qt_target(target) && has_qts() ? input_qts() : [{version: "", arch: ""}]
+}
+function "is_latest_qt_version" {
+  params = [qt_version]
+  result = qt_version != "" && qt_version == latest_qt_version()
+}
+function "is_build_non_qt" {
+  params = []
+  result = has_qts() ? is_latest_qt_version(input_qts()[length(input_qts()) - 1].version) : true
 }
 
+function "is_qtgui_dev_target" {
+  params = [target]
+  result = length(regexall("-qtgui-dev$", target)) > 0
+}
+
+function "targets" {
+  params = []
+  result = compact([
+    has_cmake_versions() && has_gccs() && is_build_non_qt() ? "cmake-gcc" : "",
+    has_cmake_versions() && has_gccs() && has_qts() ? "cmake-gcc-qt" : "",
+    has_cmake_versions() && has_gccs() && has_qts() ? "cmake-gcc-qtgui-dev" : "",
+    has_cmake_versions() && has_clangs() && is_build_non_qt() ? "cmake-clang" : "",
+    has_cmake_versions() && has_clangs() && has_gccs() && is_build_non_qt() ? "cmake-clang-libstdcpp" : "",
+    has_cmake_versions() && has_clangs() && has_gccs() && has_qts() ? "cmake-clang-libstdcpp-qt" : "",
+    has_cmake_versions() && has_clangs() && has_gccs() && has_qts() ? "cmake-clang-libstdcpp-qtgui-dev" : ""
+  ])
+}
 function "matrix" {
   params = []
   result = flatten([for target in targets() :
@@ -147,10 +239,10 @@ function "matrix" {
 
 function "latestTag" {
   params = [cmake_version, clang_major, gcc_major, qt_version]
-  result = (cmake_version == cmake_versions()[length(cmake_versions())-1]
-    && (clang_major == "" || "X${clang_major}" == "X${clangs()[length(clangs()) - 1].major}")
-    && (gcc_major == "" || "X${gcc_major}" == "X${gccs()[length(gccs()) - 1].major}")
-    && (qt_version == "" || qt_version == qts()[length(qts()) - 1].version)) ? "latest" : ""
+  result = (is_latest_cmake_version(cmake_version)
+    && (clang_major == "" || is_latest_clang_major(clang_major))
+    && (gcc_major == "" || is_latest_gcc_major(gcc_major))
+    && (qt_version == "" || is_latest_qt_version(qt_version)) ? "latest" : "")
 }
 function "versionTag" {
   params = [cmake_version, clang_major, gcc_major, qt_version]
@@ -169,11 +261,11 @@ function "describeClang" {
 }
 function "describeGcc" {
   params = [target, major]
-  result = major == "" ? "" : (length(regexall("-clang-", target)) > 0 ? "LibStdC++${major}" : "GCC${major}")
+  result = major == "" ? "" : (is_clang_target(target) ? "LibStdC++${major}" : "GCC${major}")
 }
 function "describeQt" {
   params = [target, version]
-  result = version == "" ? "" : (length(regexall("qtgui-dev$", target)) > 0 ? "QtGui ${version} + Dev" : "Qt ${version}")
+  result = version == "" ? "" : (is_qtgui_dev_target(target) ? "QtGui ${version} + Dev" : "Qt ${version}")
 }
 function "description" {
   params = [target, distro, cmake_version, clang_major, gcc_major, qt_version]
@@ -185,11 +277,11 @@ function "uniqueName" {
 }
 function "dockerTarget" {
   params = [target]
-  result = length(regexall("qtgui-dev$", target)) > 0 ? "cmake-qtgui-dev" : target
+  result = is_qtgui_dev_target(target) ? "cmake-qtgui-dev" : target
 }
 function "qtguiBaseImage" {
   params = [target]
-  result = length(regexall("-clang-", target)) > 0 ? "cmake-clang-libstdcpp-qt" : "cmake-gcc-qt"
+  result = is_clang_target(target) ? "cmake-clang-libstdcpp-qt" : "cmake-gcc-qt"
 }
 
 target "default" {

@@ -4,33 +4,36 @@ on: push
 
 jobs:
   define-matrix:
+    name: "Prepare"
     runs-on: ubuntu-24.04
     outputs:
+      distros: ${{ steps.matrix.outputs.distros }}
       cmake_versions: ${{ steps.matrix.outputs.cmake_versions }}
+      clangs: ${{ steps.matrix.outputs.clangs }}
+      gccs: ${{ steps.matrix.outputs.gccs }}
       qts: ${{ steps.matrix.outputs.qts }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Define Matrix
         id: matrix
+        shell: python
         run: |
-          echo "cmake_versions=$(cat <<JSON_EOF | jq -c
-            [
-              "3.30.6",
-              "3.31.2"
-            ]
-          JSON_EOF
-          )" >> "$GITHUB_OUTPUT"
+          import yaml
+          with open('docker_build_matrix.yml', 'r') as file:
+              matrix = yaml.safe_load(file)
 
-          echo "qts=$(cat <<JSON_EOF | jq -c
-            [
-              {"version": "6.6.3", "arch": "gcc_64"},
-              {"version": "6.7.3", "arch": "linux_gcc_64"},
-              {"version": "6.8.1", "arch": "linux_gcc_64"}
-            ]
-          JSON_EOF
-          )" >> "$GITHUB_OUTPUT"
+          import os
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            import json
+            print(f'distros=[{json.dumps(matrix["distro"])}]', file=fh)
+            print(f'cmake_versions={json.dumps(matrix['cmake'])}', file=fh)
+            print(f'clangs={json.dumps(matrix['clang'])}', file=fh)
+            print(f'gccs={json.dumps(matrix['gcc'])}', file=fh)
+            print(f'qts={json.dumps(matrix['qt'])}', file=fh)
 
   cmake:
-    name: "CMake Docker builds"
     needs: define-matrix
     strategy:
       fail-fast: false
@@ -38,6 +41,7 @@ jobs:
         cmake_version: ${{ fromJSON(needs.define-matrix.outputs.cmake_versions) }}
         qt: ${{ fromJSON(needs.define-matrix.outputs.qts) }}
 
+    name: "Build (Cmake ${{ matrix.cmake_version }}, Qt ${{ matrix.qt.version }})"
     runs-on: ubuntu-24.04
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -45,7 +49,8 @@ jobs:
         with:
           tool-cache: true
 
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -70,9 +75,12 @@ jobs:
         with:
           push: ${{ github.event_name != 'pull_request' }}
         env:
+          ALL_DISTROS: ${{ needs.define-matrix.outputs.distros }}
+          ALL_CMAKE_VERSIONS: ${{ needs.define-matrix.outputs.cmake_versions }}
+          ALL_CLANGS: ${{ needs.define-matrix.outputs.clangs }}
+          ALL_GCCS: ${{ needs.define-matrix.outputs.gccs }}
+          ALL_QTS: ${{ needs.define-matrix.outputs.qts }}
           CMAKE_VERSIONS: |
             [${{ toJSON(matrix.cmake_version) }}]
           QTS: |
             [${{ toJSON(matrix.qt) }}]
-          ALL_CMAKE_VERSIONS: ${{ needs.define-matrix.outputs.cmake_versions }}
-          ALL_QTS: ${{ needs.define-matrix.outputs.qts }}

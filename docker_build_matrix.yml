@@ -1,0 +1,21 @@
+---
+distro: "noble"
+
+cmake:
+  - "3.30.6"
+  - "3.31.2"
+
+clang:
+  - { major: 17, source: "apt" }
+  - { major: 18, source: "llvm" }
+  - { major: 19, source: "llvm" }
+
+gcc:
+  - { major: 12, source: "apt" }
+  - { major: 13, source: "apt" }
+  - { major: 14, source: "apt" }
+
+qt:
+  - { version: "6.6.3", arch: "gcc_64" }
+  - { version: "6.7.3", arch: "linux_gcc_64" }
+  - { version: "6.8.1", arch: "linux_gcc_64" }
