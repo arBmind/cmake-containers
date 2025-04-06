@@ -46,11 +46,12 @@ ARG QTGUI_PACKAGES=libegl-dev \
 
 # base Qt setup
 FROM python:3.10-slim AS qt_base
-ARG QT_ARCH
-ARG QT_VERSION
-ARG QT_MODULES
-ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
-ARG DEBIAN_FRONTEND=noninteractive
+ARG \
+  QT_ARCH \
+  QT_VERSION \
+  QT_MODULES \
+  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+  DEBIAN_FRONTEND=noninteractive
 
 RUN pip install aqtinstall
 
@@ -75,9 +76,10 @@ INSTALL_QT
 
 # base CMake setup
 FROM ubuntu:${DISTRO} AS cmake_base
-ARG CMAKE_URL
-ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
-ARG DEBIAN_FRONTEND=noninteractive
+ARG \
+  CMAKE_URL \
+  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+  DEBIAN_FRONTEND=noninteractive
 
 RUN <<INSTALL_WGET
   apt-get -qq update -o=Dpkg::Use-Pty=0
@@ -99,13 +101,13 @@ INSTALL_CMAKE
 
 # base compiler setup for GCC
 FROM ubuntu:${DISTRO} AS gcc_base
-ARG DISTRO
-ARG GCC_MAJOR
-ARG GCC_SOURCE
-ARG RUNTIME_APT
-ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
-ARG DEBIAN_FRONTEND=noninteractive
-
+ARG \
+  DISTRO \
+  GCC_MAJOR \
+  GCC_SOURCE \
+  RUNTIME_APT \
+  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+  DEBIAN_FRONTEND=noninteractive
 ENV \
   LANG=C.UTF-8 \
   LC_ALL=C.UTF-8
@@ -147,13 +149,6 @@ INSTALL_GCC
 
 # final cmake-gcc (no Qt)
 FROM gcc_base AS cmake-gcc
-ARG DISTRO
-ARG GCC_MAJOR
-ARG CMAKE_VERSION
-
-LABEL Description="Ubuntu ${DISTRO} - Gcc${GCC_MAJOR} + CMake ${CMAKE_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
-
 COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
   PATH=/opt/cmake/bin:${PATH}
@@ -162,14 +157,7 @@ ENV \
 
 # final cmake-gcc-gt (with Qt)
 FROM gcc_base AS cmake-gcc-qt
-ARG DISTRO
-ARG GCC_MAJOR
-ARG CMAKE_VERSION
 ARG QT_VERSION
-ARG QT_ARCH
-
-LABEL Description="Ubuntu ${DISTRO} - Gcc${GCC_MAJOR} + CMake ${CMAKE_VERSION} + Qt ${QT_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
@@ -182,13 +170,13 @@ ENV \
 
 # base compiler setup for Clang
 FROM ubuntu:${DISTRO} AS clang_base
-ARG DISTRO
-ARG CLANG_MAJOR
-ARG CLANG_SOURCE
-ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
-ARG DEBIAN_FRONTEND=noninteractive
-ARG RUNTIME_APT
-
+ARG \
+  DISTRO \
+  CLANG_MAJOR \
+  CLANG_SOURCE \
+  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+  DEBIAN_FRONTEND=noninteractive \
+  RUNTIME_APT
 ENV \
   LANG=C.UTF-8 \
   LC_ALL=C.UTF-8
@@ -233,13 +221,6 @@ INSTALL_CLANG
 
 # final cmake-clang (no Qt)
 FROM clang_base AS cmake-clang
-ARG DISTRO
-ARG CLANG_MAJOR
-ARG CMAKE_VERSION
-
-LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + CMake ${CMAKE_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
-
 COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
   PATH=/opt/cmake/bin:${PATH}
@@ -247,15 +228,10 @@ ENV \
 
 # final cmake-clang-qt (with Qt)
 FROM clang_base AS cmake-clang-qt
-ARG DISTRO
-ARG CLANG_MAJOR
-ARG CMAKE_VERSION
-ARG QT_VERSION
-ARG CLANG_QT_URL
-ARG QT_EXTRAS_URL
-
-LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + CMake ${CMAKE_VERSION} + Qt ${QT_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
+ARG \
+  QT_VERSION \
+  CLANG_QT_URL \
+  QT_EXTRAS_URL
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 RUN <<INSTALL_CLANG_QT
@@ -272,11 +248,12 @@ ENV \
 
 
 FROM clang_base AS clang_libstdcpp_base
-ARG DISTRO
-ARG GCC_MAJOR
-ARG GCC_SOURCE
-ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
-ARG DEBIAN_FRONTEND=noninteractive
+ARG \
+  DISTRO \
+  GCC_MAJOR \
+  GCC_SOURCE \
+  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+  DEBIAN_FRONTEND=noninteractive
 
 RUN <<INSTALL_LIBSTDCPP
   if [ "$GCC_SOURCE" = "ppa" ] ; then
@@ -295,14 +272,6 @@ INSTALL_LIBSTDCPP
 
 # final cmake-clang-libstdcpp (no Qt)
 FROM clang_libstdcpp_base AS cmake-clang-libstdcpp
-ARG DISTRO
-ARG CLANG_MAJOR
-ARG GCC_MAJOR
-ARG CMAKE_VERSION
-
-LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + Libstdc++-${GCC_MAJOR} + CMake ${CMAKE_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
-
 COPY --from=cmake_base /opt/cmake /opt/cmake
 ENV \
   PATH=/opt/cmake/bin:${PATH}
@@ -311,15 +280,7 @@ ENV \
 
 # final cmake-clang-qt (with Qt)
 FROM clang_libstdcpp_base AS cmake-clang-libstdcpp-qt
-ARG DISTRO
-ARG CLANG_MAJOR
-ARG GCC_MAJOR
-ARG CMAKE_VERSION
 ARG QT_VERSION
-ARG QT_ARCH
-
-LABEL Description="Ubuntu ${DISTRO} - Clang${CLANG_MAJOR} + Libstdc++-${GCC_MAJOR} + CMake ${CMAKE_VERSION} + Qt ${QT_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/arBmind/cmake-containers"
 
 COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
