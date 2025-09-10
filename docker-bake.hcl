@@ -1,6 +1,6 @@
 function "default_distros" {
   params = []
-  result = ["noble"]
+  result = ["noble"] # distro for non gcc
 }
 function "default_cmake_versions" {
   params = []
@@ -9,25 +9,29 @@ function "default_cmake_versions" {
 function "default_clangs" {
   params = []
   result = [
-    {major: 17, source: "apt"},
+    // {major: 17, source: "apt"},
     {major: 18, source: "llvm"},
-    {major: 19, source: "llvm"}
+    {major: 19, source: "llvm"},
+    {major: 20, source: "llvm"},
+    {major: 21, source: "llvm"}
   ]
 }
 function "default_gccs" {
   params = []
   result = [
-    {major: 12, source: "apt"},
-    {major: 13, source: "apt"},
-    {major: 14, source: "apt"}
+    // {major: 12, source: "apt"},
+    {major: 13, source: "apt", distro: "noble"},
+    {major: 14, source: "apt", distro: "noble"},
+    {major: 15, source: "apt", distro: "plucky"}
   ]
 }
 function "default_qts" {
   params = []
   result = [
-    {version: "6.6.3", arch: "gcc_64"},
+    // {version: "6.6.3", arch: "gcc_64"},
     {version: "6.7.3", arch: "linux_gcc_64"},
-    {version: "6.8.1", arch: "linux_gcc_64"}
+    {version: "6.8.3", arch: "linux_gcc_64"},
+    {version: "6.9.2", arch: "linux_gcc_64"}
   ]
 }
 
@@ -150,7 +154,7 @@ function "is_gcc_target" {
 }
 function "matrix_gccs" {
   params = [target]
-  result = is_gcc_target(target) && has_gccs() ? input_gccs() : [{major: "", source: ""}]
+  result = is_gcc_target(target) && has_gccs() ? input_gccs() : [{major: "", source: "", distro: ""}]
 }
 function "is_latest_gcc_major" {
   params = [gcc_major]
@@ -224,7 +228,7 @@ function "matrix" {
           flatten([for gcc in matrix_gccs(target) :
             [for qt in matrix_qts(target) : {
               target: target,
-              distro: distro,
+              distro: (gcc.distro != "" ? gcc.distro : distro),
               cmake_version: cmake_version,
               clang: clang,
               gcc: gcc,
