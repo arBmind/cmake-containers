@@ -1,5 +1,8 @@
+# syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv
+
 ARG DISTRO=noble
-ARG CLANG_MAJOR=18
+ARG CLANG_MAJOR=21
 # clang source options:
 # apt - directly use apt version
 # llvm - add llvm distro repo
@@ -9,8 +12,10 @@ ARG GCC_MAJOR=14
 # apt - directly use apt version
 # ppa - add toolchain ppa
 ARG GCC_SOURCE=apt
+# note: this AQT version has patch for latest python pool issues (no new release yet)
+ARG AQT_WHL_URL=https://github.com/arBmind/aqtinstall/releases/download/3.3.1-dev/aqtinstall-3.3.1.dev19-py3-none-any.whl
 ARG QT_ARCH=gcc_64
-ARG QT_VERSION=6.7.1
+ARG QT_VERSION=6.9.2
 ARG QT_MODULES=""
 ARG CLANG_QT_URL=https://github.com/arBmind/qt5/releases/download/v6.5.3/qt653_clang17.tgz
 ARG QT_EXTRAS_URL=https://github.com/arBmind/qt5/releases/download/v6.5.3/extra_libs.tgz
@@ -19,7 +24,7 @@ ARG CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSIO
 # Ubuntu lunar
 #ARG RUNTIME_APT="libicu72 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
 # Ubuntu noble
-ARG RUNTIME_APT="icu-devtools libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
+ARG RUNTIME_APT="icu-devtools libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0 libbrotli1"
 # use "cmake-gcc-qt" or "cmake-clang-libstdcpp-qt"
 ARG QTGUI_BASE_IMAGE="cmake-gcc-qt"
 # note: these depend on distro and Qt version
@@ -45,31 +50,43 @@ ARG QTGUI_PACKAGES=libegl-dev \
 
 
 # base Qt setup
-FROM python:3.10-slim AS qt_base
+FROM python:3.13-slim AS qt_base
 ARG \
+  AQT_WHL_URL \
   QT_ARCH \
   QT_VERSION \
   QT_MODULES \
   APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
   DEBIAN_FRONTEND=noninteractive
 
-RUN pip install aqtinstall
-
-RUN <<INSTALL_7ZIP
+RUN <<INSTALL_AQT
   apt-get -qq update -o=Dpkg::Use-Pty=0
   apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
+    wget \
     p7zip-full \
     libglib2.0-0
   apt-get -qq --yes autoremove -o=Dpkg::Use-Pty=0
   apt-get -qq clean autoclean -o=Dpkg::Use-Pty=0
   rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
-INSTALL_7ZIP
+  if [ "$AQT_WHL_URL" != "" ] ; then
+    FILENAME=$(basename "$AQT_WHL_URL")
+    wget -q -c ${AQT_WHL_URL} -O /tmp/$FILENAME
+    pip install /tmp/$FILENAME
+    rm /tmp/$FILENAME
+  else
+    pip install aqtinstall
+  fi
+INSTALL_AQT
 
 RUN <<INSTALL_QT
   set -e
   mkdir /qt
   cd /qt
-  aqt install-qt linux desktop ${QT_VERSION} ${QT_ARCH} -m ${QT_MODULES} --external $(which 7zr)
+  echo '#!/bin/bash' > /tmp/7z.sh
+  echo "$(which 7zr) \"\$@\" -snld20" >> /tmp/7z.sh
+  chmod u+x /tmp/7z.sh
+  aqt install-qt linux desktop ${QT_VERSION} ${QT_ARCH} -m ${QT_MODULES} --external /tmp/7z.sh
+  rm /tmp/7z.sh
 INSTALL_QT
 
 
@@ -163,8 +180,7 @@ COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
 ENV \
   QTDIR=/qt/${QT_VERSION}/gcc_64 \
-  PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH} \
-  LD_LIBRARY_PATH=/qt/${QT_VERSION}/gcc_64/lib:${LD_LIBRARY_PATH}
+  PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH}
 
 
 
@@ -249,8 +265,7 @@ INSTALL_CLANG_QT
 
 ENV \
   QTDIR=/opt/qt${QT_VERSION} \
-  PATH=/opt/qt${QT_VERSION}/bin:/opt/cmake/bin:${PATH} \
-  LD_LIBRARY_PATH=/opt/qt${QT_VERSION}/lib:${LD_LIBRARY_PATH}
+  PATH=/opt/qt${QT_VERSION}/bin:/opt/cmake/bin:${PATH}
 
 
 
@@ -293,8 +308,7 @@ COPY --from=cmake_base /opt/cmake /opt/cmake
 COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
 ENV \
   QTDIR=/qt/${QT_VERSION}/gcc_64 \
-  PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH} \
-  LD_LIBRARY_PATH=/qt/${QT_VERSION}/gcc_64/lib:${LD_LIBRARY_PATH}
+  PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH}
 
 
 
