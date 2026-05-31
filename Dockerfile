@@ -56,7 +56,6 @@ ARG \
   QT_ARCH \
   QT_VERSION \
   QT_MODULES \
-  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
   DEBIAN_FRONTEND=noninteractive
 
 RUN <<INSTALL_AQT
@@ -95,7 +94,6 @@ INSTALL_QT
 FROM ubuntu:${DISTRO} AS cmake_base
 ARG \
   CMAKE_URL \
-  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
   DEBIAN_FRONTEND=noninteractive
 
 RUN <<INSTALL_WGET
@@ -181,6 +179,7 @@ COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
 ENV \
   QTDIR=/qt/${QT_VERSION}/gcc_64 \
   PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH}
+# LD_LIBRARY_PATH=/qt/${QT_VERSION}/gcc_64/lib
 
 
 
@@ -190,7 +189,6 @@ ARG \
   DISTRO \
   CLANG_MAJOR \
   CLANG_SOURCE \
-  APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
   DEBIAN_FRONTEND=noninteractive \
   RUNTIME_APT
 ENV \
@@ -266,6 +264,7 @@ INSTALL_CLANG_QT
 ENV \
   QTDIR=/opt/qt${QT_VERSION} \
   PATH=/opt/qt${QT_VERSION}/bin:/opt/cmake/bin:${PATH}
+# LD_LIBRARY_PATH=/opt/qt${QT_VERSION}/lib
 
 
 
@@ -309,6 +308,7 @@ COPY --from=qt_base /qt/${QT_VERSION} /qt/${QT_VERSION}
 ENV \
   QTDIR=/qt/${QT_VERSION}/gcc_64 \
   PATH=/qt/${QT_VERSION}/gcc_64/bin:/opt/cmake/bin:${PATH}
+# LD_LIBRARY_PATH=/qt/${QT_VERSION}/gcc_64/lib
 
 
 
