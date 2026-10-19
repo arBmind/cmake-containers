@@ -2,6 +2,10 @@ name: Build Docker Images
 
 on: push
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   define-matrix:
     name: "Prepare"
@@ -14,7 +18,7 @@ jobs:
       qts: ${{ steps.matrix.outputs.qts }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Define Matrix
         id: matrix
@@ -46,34 +50,35 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@v2
         with:
-          tool-cache: true
+          preinstalled-runtimes: true
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        uses: docker/bake-action@v5
+        uses: docker/bake-action@v7
         with:
+          source: .
           push: ${{ github.event_name != 'pull_request' }}
         env:
           ALL_DISTROS: ${{ needs.define-matrix.outputs.distros }}

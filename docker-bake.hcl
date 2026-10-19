@@ -1,37 +1,42 @@
 function "default_distros" {
   params = []
-  result = ["noble"] # distro for non gcc
+  result = [
+    "noble"
+  ]
 }
 function "default_cmake_versions" {
   params = []
-  result = ["3.30.6", "3.31.2"]
+  result = [
+    "4.2.8",
+    "4.3.5",
+    "4.4.4"
+  ]
 }
 function "default_clangs" {
   params = []
   result = [
-    // {major: 17, source: "apt"},
-    {major: 18, source: "llvm"},
-    {major: 19, source: "llvm"},
-    {major: 20, source: "llvm"},
-    {major: 21, source: "llvm"}
+    {"major": 20, "source": "llvm"},
+    {"major": 21, "source": "llvm"},
+    {"major": 22, "source": "llvm"},
+    {"major": 23, "source": "llvm"}
   ]
 }
 function "default_gccs" {
   params = []
   result = [
-    // {major: 12, source: "apt"},
-    {major: 13, source: "apt", distro: "noble"},
-    {major: 14, source: "apt", distro: "noble"},
-    {major: 15, source: "apt", distro: "plucky"}
+    {"major": 13, "source": "apt", "distro": "noble"},
+    {"major": 14, "source": "apt", "distro": "noble"},
+    {"major": 15, "source": "apt", "distro": "resolute"},
+    {"major": 16, "source": "apt", "distro": "stonking"}
   ]
 }
 function "default_qts" {
   params = []
   result = [
-    // {version: "6.6.3", arch: "gcc_64"},
-    {version: "6.7.3", arch: "linux_gcc_64"},
-    {version: "6.8.3", arch: "linux_gcc_64"},
-    {version: "6.9.2", arch: "linux_gcc_64"}
+    {"version": "6.9.3", "arch": "linux_gcc_64"},
+    {"version": "6.10.3", "arch": "linux_gcc_64"},
+    {"version": "6.11.3", "arch": "linux_gcc_64"},
+    {"version": "6.12.0", "arch": "linux_gcc_64"}
   ]
 }
 

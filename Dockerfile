@@ -1,25 +1,25 @@
 # syntax=docker/dockerfile:1
 # check=skip=SecretsUsedInArgOrEnv
 
-ARG DISTRO=noble
-ARG CLANG_MAJOR=21
+ARG DISTRO=stonking
+ARG CLANG_MAJOR=23
 # clang source options:
 # apt - directly use apt version
 # llvm - add llvm distro repo
 ARG CLANG_SOURCE=llvm
-ARG GCC_MAJOR=14
+ARG GCC_MAJOR=16
 # gcc source options:
 # apt - directly use apt version
 # ppa - add toolchain ppa
 ARG GCC_SOURCE=apt
-# note: this AQT version has patch for latest python pool issues (no new release yet)
-ARG AQT_WHL_URL=https://github.com/arBmind/aqtinstall/releases/download/3.3.1-dev/aqtinstall-3.3.1.dev19-py3-none-any.whl
-ARG QT_ARCH=gcc_64
-ARG QT_VERSION=6.9.2
+# Final aqtinstall release.
+ARG AQT_WHL_URL=https://files.pythonhosted.org/packages/7f/70/849fa1005fa197fc28a744fd69598ab9da883b737a1ab9461d88721ddd0b/aqtinstall-3.3.0-py3-none-any.whl
+ARG QT_ARCH=linux_gcc_64
+ARG QT_VERSION=6.12.0
 ARG QT_MODULES=""
 ARG CLANG_QT_URL=https://github.com/arBmind/qt5/releases/download/v6.5.3/qt653_clang17.tgz
 ARG QT_EXTRAS_URL=https://github.com/arBmind/qt5/releases/download/v6.5.3/extra_libs.tgz
-ARG CMAKE_VERSION=3.29.5
+ARG CMAKE_VERSION=4.4.4
 ARG CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
 # Ubuntu lunar
 #ARG RUNTIME_APT="libicu72 libgssapi-krb5-2 libdbus-1-3 libpcre2-16-0"
@@ -50,7 +50,8 @@ ARG QTGUI_PACKAGES=libegl-dev \
 
 
 # base Qt setup
-FROM python:3.13-slim AS qt_base
+# Keep Python 3.13 until aqtinstall's native dependencies provide 3.15 wheels.
+FROM python:3.13-slim-trixie AS qt_base
 ARG \
   AQT_WHL_URL \
   QT_ARCH \
@@ -59,6 +60,7 @@ ARG \
   DEBIAN_FRONTEND=noninteractive
 
 RUN <<INSTALL_AQT
+  set -e
   apt-get -qq update -o=Dpkg::Use-Pty=0
   apt-get -qq --yes install -o=Dpkg::Use-Pty=0 --no-install-recommends \
     wget \
@@ -75,6 +77,7 @@ RUN <<INSTALL_AQT
   else
     pip install aqtinstall
   fi
+  aqt version
 INSTALL_AQT
 
 RUN <<INSTALL_QT
@@ -82,7 +85,8 @@ RUN <<INSTALL_QT
   mkdir /qt
   cd /qt
   echo '#!/bin/bash' > /tmp/7z.sh
-  echo "$(which 7zr) \"\$@\" -snld20" >> /tmp/7z.sh
+  SEVENZIP=$(command -v 7zr)
+  echo "$SEVENZIP \"\$@\" -snld20" >> /tmp/7z.sh
   chmod u+x /tmp/7z.sh
   aqt install-qt linux desktop ${QT_VERSION} ${QT_ARCH} -m ${QT_MODULES} --external /tmp/7z.sh
   rm /tmp/7z.sh
@@ -206,12 +210,17 @@ RUN <<INSTALL_CLANG
     apt-transport-https \
     ca-certificates
   if [ "$CLANG_SOURCE" = "llvm" ] ; then
+    LLVM_DISTRO=${DISTRO}
+    # Use the latest supported LLVM suite until Stonking is available.
+    if [ "$LLVM_DISTRO" = "stonking" ] ; then LLVM_DISTRO=resolute; fi
+    # LLVM 20 predates the Resolute repository.
+    if [ "$LLVM_DISTRO" = "resolute" ] && [ "$CLANG_MAJOR" = "20" ] ; then LLVM_DISTRO=noble; fi
     wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
     tee /etc/apt/sources.list.d/llvm.sources <<LLVM_SOURCES
 Enabled: yes
 Types: deb
-URIs: http://apt.llvm.org/${DISTRO}/
-Suites: llvm-toolchain-${DISTRO}-${CLANG_MAJOR}
+URIs: http://apt.llvm.org/${LLVM_DISTRO}/
+Suites: llvm-toolchain-${LLVM_DISTRO}-${CLANG_MAJOR}
 Components: main
 Signed-By: /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 LLVM_SOURCES
